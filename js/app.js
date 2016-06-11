@@ -7,7 +7,7 @@ var App = function (domCounterId) {
     var grid,
         ant,
         timing = 10,
-        tileSize = 15,
+        tileSize = tileSize || 15,
         timeInterval = false,
         domCounter = document.getElementById(domCounterId) || false;
 
@@ -38,11 +38,16 @@ var App = function (domCounterId) {
         stop();start();
     }
 
+    function setTileSize(newTileSize){
+        tileSize = newTileSize;
+    }
+
     function getNbrMove(){
         return ant.getMoveNbr();
     }
 
-    function reset(){
+    function reset(tileSize){
+        setTileSize(tileSize);
         stop();
         grid.clear();
         ant.removeDom();
@@ -61,7 +66,8 @@ var App = function (domCounterId) {
         start: start,
         stop: stop,
         setTiming : setTiming,
-        reset : reset
+        reset : reset,
+        setTileSize : setTileSize
     }
 };
 /**
