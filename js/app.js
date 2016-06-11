@@ -3,14 +3,20 @@
  * @returns {{start: start, stop: stop, setTiming: setTiming}}
  * @constructor
  */
-var App = function () {
+var App = function (domCounterId) {
     var grid,
         ant,
         timing = 10,
         tileSize = 15,
-        timeInterval = false;
+        timeInterval = false,
+        domCounter = document.getElementById(domCounterId) || false;
 
     function init() {
+        // -- init configuration balance
+        Configuration.getInstance().setIsMoving(false);
+        Configuration.getInstance().setCanMove(true);
+        Configuration.getInstance().setCountDomElement(domCounter);
+        // -- instanciation element
         grid = new Grid(tileSize);
         grid.addSvgContainer();
         ant = new Ant(grid);
@@ -32,11 +38,30 @@ var App = function () {
         stop();start();
     }
 
+    function getNbrMove(){
+        return ant.getMoveNbr();
+    }
+
+    function reset(){
+        stop();
+        grid.clear();
+        ant.removeDom();
+
+        ant = null;
+        grid = null;
+
+        init();
+
+    }
+
     init();
+
     return {
+        getNbrMove: getNbrMove,
         start: start,
         stop: stop,
-        setTiming : setTiming
+        setTiming : setTiming,
+        reset : reset
     }
 };
 /**
@@ -90,6 +115,7 @@ var Tile = function (x, y, size) {
         }
     }
 
+
     init();
 
     return {
@@ -100,15 +126,15 @@ var Tile = function (x, y, size) {
 };
 /**
  * Grid
- * @param tileSize
- * @param container optional : container for grid
+ * @param tileSizeDef
+ * @param containerDom optional : container for grid
  * @returns {{tileSize: (*|number), container: *, getTileWithPixel: getTileWithPixel, addSvgContainer: addSvgContainer, getCenteredTile: getCenteredTile}}
  * @constructor
  */
-var Grid = function (tileSize,container) {
-    var container = container || document.getElementsByTagName("body")[0];
+var Grid = function (tileSizeDef,containerDom) {
+    var container = containerDom || document.getElementsByTagName("body")[0];
     var svgTag;
-    var tileSize = tileSize || 20;
+    var tileSize = tileSizeDef || 20;
     var arrayTile = [];
     var tilesHeight = Math.ceil(document.documentElement.clientHeight / tileSize);
     var tilesWidth = Math.ceil(document.documentElement.clientWidth / tileSize);
@@ -149,8 +175,14 @@ var Grid = function (tileSize,container) {
         return arrayTile[i][j];
     }
 
+    function clear(){
+        svgTag.remove();
+        arrayTile = [];
+    }
+
 
     return {
+        clear: clear,
         tileSize: tileSize,
         container: container,
         getTileWithPixel: getTileWithPixel,
@@ -173,6 +205,7 @@ var Ant = function (grid) {
 
 
     function init() {
+        resetMoveNbr();
         antPicture = document.createElement("img");
         antPicture.setAttribute("src", "img/square.gif");
         antPicture.setAttribute("width", grid.tileSize);
@@ -189,10 +222,20 @@ var Ant = function (grid) {
 
     function resetMoveNbr() {
         moveNbr = 0;
+        updateCounter(moveNbr);
     }
 
     function getMoveNbr() {
         return moveNbr;
+    }
+
+    function removeDom(){
+        antPicture.remove();
+
+    }
+
+    function updateCounter(nbr){
+        Configuration.getInstance().getCountDomElement()!== false ? Configuration.getInstance().getCountDomElement().innerHTML = nbr :"";
     }
 
 
@@ -201,7 +244,7 @@ var Ant = function (grid) {
             return;
         var currentTile = grid.getTileWithPixel(parseInt(antPicture.style.left), parseInt(antPicture.style.top));
         if (currentTile === false) {
-            Configuration.getInstance().setCanMove(false)
+            Configuration.getInstance().setCanMove(false);
             return;
         }
         rotation += currentTile.getDirection();
@@ -211,6 +254,7 @@ var Ant = function (grid) {
         moveBy(moveX, moveY);
         currentTile.toggleColor();
         moveNbr++;
+        updateCounter(moveNbr);
     }
 
     function moveBy(x, y) {
@@ -228,7 +272,8 @@ var Ant = function (grid) {
     return {
         moveToNext: moveToNext,
         resetMoveNbr: resetMoveNbr,
-        getMoveNbr: getMoveNbr
+        getMoveNbr: getMoveNbr,
+        removeDom:removeDom
     }
 };
 /**
@@ -253,17 +298,24 @@ var Configuration = (function () {
     function getIsMoving(){
         return isMoving;
     }
+    var countDomElement = false;
+    function setCountDomElement(domElement){
+        countDomElement = domElement;
+    }
+    function getCountDomElement(){
+        return countDomElement;
+    }
 
 
 
     function createInstance() {
-        var object = new Object("I am the instance");
         return {
             setCanMove : setCanMove,
             getCanMove : getCanMove,
             setIsMoving : setIsMoving,
-            getIsMoving : getIsMoving
-
+            getIsMoving : getIsMoving,
+            getCountDomElement : getCountDomElement,
+            setCountDomElement : setCountDomElement
         };
     }
 

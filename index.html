@@ -5,24 +5,58 @@
     <meta charset="utf-8">
 
     <title>Langton's Ant | Brieuc Barthélemy</title>
-    <meta name="description" content="A javascript example of Langton's ant | Un exemple de la fourmi de Langton en Javascript ">
+    <meta name="description"
+          content="A javascript example of Langton's ant | Un exemple de la fourmi de Langton en Javascript ">
     <meta name="author" content="Brieuc barthélemy">
+    <link href="vendor/foundation-6.2.3-custom/css/foundation.min.css" rel="stylesheet">
     <style>
-        .white{fill:#fff;}
-        .black{fill:#000;}
-        body{margin: 0; overflow: hidden; }
+        .white {
+            fill: #fff;
+        }
+
+        .black {
+            fill: #000;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        h1{font-size: large;}
+
+        #control_panel {position: absolute;right: 10px;top: 10px ;width: 250px;padding: 10px;background-color: #fff; }
 
     </style>
 </head>
+
+<div id="control_panel">
+    <h1>Langton's Ant JS</h1>
+    <small>... is a two-dimensional Turing machine with a very simple set of rules but complex emergent
+    behavior. [<a href="https://en.wikipedia.org/wiki/Langton%27s_ant" target="_blank">Wikipedia</a>]<br>
+    Rules are: when the Ant (<img src="img/square.gif">) is on white tile, it goes right, if black it goes left.
+    When it leaves the tile, the tile toggles to the other color.<br>
+    Note: the "ant" will stop when it goes out of grid.</small>
+    <hr>
+   <small> Speed :
+    The ant moves every <span id="updateTime">100</span> milliseconds.<br>
+    <input type="range" min="10" max="5000" value="100" step="10" onchange="app.setTiming(this.value);document.getElementById('updateTime').innerHTML=this.value" />
+    <br>
+    <button onclick="app.start()" class="button small">Start Ant</button>
+    <button onclick="app.stop()" class="button primary small">Pause Ant</button>
+    <button onclick="app.reset()" class="button primary small">Reset simulation</button><br></small>
+       <div>Number of move: <span id="moveNbr"></span></div>
+
+    <small> You can find the sources on <a href="http://bit.ly/25UgkmW" target="_blank">Github</a>.<br/>
+    <a href="http://brieuc.be" target="_blank">Brieuc.be</a></small>
+</div>
 
 <body>
 <script src="js/app.js"></script>
 <script>
     // -- Build grid and Ant
-    var app = new App();
-    // -- Start Ant
-    setTimeout(app.start,500);
-
+    var app = new App("moveNbr");
+    // -- Temporize start
+    setTimeout(app.start(),500);
 </script>
 </body>
 </html>
