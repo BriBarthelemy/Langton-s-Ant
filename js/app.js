@@ -1,8 +1,13 @@
+/**
+ * App : root of application
+ * @returns {{start: start, stop: stop, setTiming: setTiming}}
+ * @constructor
+ */
 var App = function () {
     var grid,
         ant,
         timing = 10,
-        tileSize = 20,
+        tileSize = 15,
         timeInterval = false;
 
     function init() {
@@ -13,11 +18,13 @@ var App = function () {
 
     function start(){
         if(timeInterval === false)
+            Configuration.getInstance().setIsMoving(true);
             timeInterval = setInterval(ant.moveToNext,timing);
     }
     function stop(){
         clearInterval(timeInterval);
         timeInterval = false;
+        Configuration.getInstance().setIsMoving(false);
     }
 
     function setTiming(newTiming){
@@ -32,7 +39,14 @@ var App = function () {
         setTiming : setTiming
     }
 };
-
+/**
+ * Tile Class
+ * @param x
+ * @param y
+ * @param size
+ * @returns {{getDomElement: getDomElement, getDirection: getDirection, toggleColor: toggleColor}}
+ * @constructor
+ */
 var Tile = function (x, y, size) {
 
     var domElement;
@@ -54,6 +68,9 @@ var Tile = function (x, y, size) {
     }
 
     function clickOnTile(event) {
+        if (Configuration.getInstance().getIsMoving())
+            return;
+
         toggleColor();
     }
 
@@ -73,15 +90,21 @@ var Tile = function (x, y, size) {
         }
     }
 
-
     init();
+
     return {
         getDomElement: getDomElement,
         getDirection: getDirection,
         toggleColor: toggleColor
     }
 };
-
+/**
+ * Grid
+ * @param tileSize
+ * @param container optional : container for grid
+ * @returns {{tileSize: (*|number), container: *, getTileWithPixel: getTileWithPixel, addSvgContainer: addSvgContainer, getCenteredTile: getCenteredTile}}
+ * @constructor
+ */
 var Grid = function (tileSize,container) {
     var container = container || document.getElementsByTagName("body")[0];
     var svgTag;
@@ -136,10 +159,14 @@ var Grid = function (tileSize,container) {
     }
 
 };
-
+/**
+ * Ant
+ * @param grid
+ * @returns {{moveToNext: moveToNext, resetMoveNbr: resetMoveNbr, getMoveNbr: getMoveNbr}}
+ * @constructor
+ */
 var Ant = function (grid) {
-    var canMove = true,
-        moveNbr = 0,
+    var moveNbr = 0,
         antPicture,
         paddingImg = 0;
     rotation = -Math.PI * 0.5;
@@ -154,10 +181,8 @@ var Ant = function (grid) {
 
         antPicture.onload = function () {
             grid.container.appendChild(antPicture);
-
-            paddingImg = (grid.tileSize - antPicture.clientWidth) / 2
+            paddingImg = (grid.tileSize - antPicture.clientWidth) / 2;
             var arrayPos = grid.getCenteredTile();
-
             setPos(arrayPos[1] * grid.tileSize, arrayPos[0] * grid.tileSize);
         }
     }
@@ -172,11 +197,11 @@ var Ant = function (grid) {
 
 
     function moveToNext() {
-        if (!canMove)
+        if (!Configuration.getInstance().getCanMove())
             return;
         var currentTile = grid.getTileWithPixel(parseInt(antPicture.style.left), parseInt(antPicture.style.top));
         if (currentTile === false) {
-            canMove = false;
+            Configuration.getInstance().setCanMove(false)
             return;
         }
         rotation += currentTile.getDirection();
@@ -206,6 +231,52 @@ var Ant = function (grid) {
         getMoveNbr: getMoveNbr
     }
 };
+/**
+ * App Configuratoin with a Singleton pattern
+ * @type {{getInstance}}
+ */
+var Configuration = (function () {
+    var instance;
 
-var app = new App();
-app.start();
+    var canMove = true;
+    function setCanMove(bool){
+        canMove = bool;
+    }
+    function getCanMove(){
+        return canMove;
+    }
+
+    var isMoving = false;
+    function setIsMoving(bool){
+        isMoving = bool;
+    }
+    function getIsMoving(){
+        return isMoving;
+    }
+
+
+
+    function createInstance() {
+        var object = new Object("I am the instance");
+        return {
+            setCanMove : setCanMove,
+            getCanMove : getCanMove,
+            setIsMoving : setIsMoving,
+            getIsMoving : getIsMoving
+
+        };
+    }
+
+
+
+    return {
+        getInstance: function () {
+            if (!instance) {
+                instance = createInstance();
+            }
+            return instance;
+        }
+
+    };
+})();
+
