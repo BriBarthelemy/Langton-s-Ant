@@ -22,31 +22,33 @@ var App = function (domCounterId) {
         ant = new Ant(grid);
     }
 
-    function start(){
-        if(timeInterval === false)
+    function start() {
+        if (timeInterval === false)
             Configuration.getInstance().setIsMoving(true);
-            timeInterval = setInterval(ant.moveToNext,timing);
+        timeInterval = setInterval(ant.moveToNext, timing);
     }
-    function stop(){
+
+    function stop() {
         clearInterval(timeInterval);
         timeInterval = false;
         Configuration.getInstance().setIsMoving(false);
     }
 
-    function setTiming(newTiming){
+    function setTiming(newTiming) {
         timing = newTiming;
-        stop();start();
+        stop();
+        start();
     }
 
-    function setTileSize(newTileSize){
+    function setTileSize(newTileSize) {
         tileSize = newTileSize;
     }
 
-    function getNbrMove(){
+    function getNbrMove() {
         return ant.getMoveNbr();
     }
 
-    function reset(tileSize){
+    function reset(tileSize) {
         setTileSize(tileSize);
         stop();
         grid.clear();
@@ -65,9 +67,9 @@ var App = function (domCounterId) {
         getNbrMove: getNbrMove,
         start: start,
         stop: stop,
-        setTiming : setTiming,
-        reset : reset,
-        setTileSize : setTileSize
+        setTiming: setTiming,
+        reset: reset,
+        setTileSize: setTileSize
     }
 };
 /**
@@ -82,6 +84,7 @@ var Tile = function (x, y, size) {
 
     var domElement;
 
+
     function init() {
         domElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         domElement.setAttribute("x", x * size);
@@ -91,6 +94,10 @@ var Tile = function (x, y, size) {
         domElement.setAttribute("height", size);
         domElement.setAttribute("class", 'tile white');
         domElement.setAttribute("id", x + '-' + y);
+
+        domElement.setAttribute("data-row", y);
+        domElement.setAttribute("data-col", x);
+
         domElement.addEventListener("click", clickOnTile);
     }
 
@@ -137,7 +144,7 @@ var Tile = function (x, y, size) {
  * @returns {{tileSize: (*|number), container: *, getTileWithPixel: getTileWithPixel, addSvgContainer: addSvgContainer, getCenteredTile: getCenteredTile}}
  * @constructor
  */
-var Grid = function (tileSizeDef,containerDom) {
+var Grid = function (tileSizeDef, containerDom) {
     var container = containerDom || document.getElementsByTagName("body")[0];
     var svgTag;
     var tileSize = tileSizeDef || 20;
@@ -164,11 +171,8 @@ var Grid = function (tileSizeDef,containerDom) {
     }
 
     function getCenteredTile() {
-        return [
-            Math.round(tilesHeight / 2),
-            Math.round(tilesWidth / 2)
+        return getTileWithPosInArray( Math.round(tilesHeight / 2),Math.round(tilesWidth / 2));
 
-        ]
     }
 
     function getTileWithPixel(x, y) {
@@ -181,7 +185,16 @@ var Grid = function (tileSizeDef,containerDom) {
         return arrayTile[i][j];
     }
 
-    function clear(){
+    function getTileWithPosInArray(rowIndex, colIndex) {
+
+        if (arrayTile[rowIndex] == undefined || arrayTile[rowIndex][colIndex] == undefined) {
+            return false;
+        }
+        return arrayTile[rowIndex][colIndex];
+    }
+
+
+    function clear() {
         svgTag.remove();
         arrayTile = [];
     }
@@ -192,6 +205,7 @@ var Grid = function (tileSizeDef,containerDom) {
         tileSize: tileSize,
         container: container,
         getTileWithPixel: getTileWithPixel,
+        getTileWithPosInArray: getTileWithPosInArray,
         addSvgContainer: addSvgContainer,
         getCenteredTile: getCenteredTile
     }
@@ -206,8 +220,8 @@ var Grid = function (tileSizeDef,containerDom) {
 var Ant = function (grid) {
     var moveNbr = 0,
         antPicture,
-        paddingImg = 0;
-    rotation = -Math.PI * 0.5;
+        rotation = -Math.PI * 0.5;
+    var currentTile = null;
 
 
     function init() {
@@ -220,9 +234,10 @@ var Ant = function (grid) {
 
         antPicture.onload = function () {
             grid.container.appendChild(antPicture);
-            paddingImg = (grid.tileSize - antPicture.clientWidth) / 2;
-            var arrayPos = grid.getCenteredTile();
-            setPos(arrayPos[1] * grid.tileSize, arrayPos[0] * grid.tileSize);
+
+            currentTile = grid.getCenteredTile();
+
+            setPos(currentTile.getDomElement().getAttribute("x"), currentTile.getDomElement().getAttribute("y"));
         }
     }
 
@@ -235,42 +250,55 @@ var Ant = function (grid) {
         return moveNbr;
     }
 
-    function removeDom(){
+    function removeDom() {
         antPicture.remove();
 
     }
 
-    function updateCounter(nbr){
-        Configuration.getInstance().getCountDomElement()!== false ? Configuration.getInstance().getCountDomElement().innerHTML = nbr :"";
+    function updateCounter(nbr) {
+        Configuration.getInstance().getCountDomElement() !== false ? Configuration.getInstance().getCountDomElement().innerHTML = nbr : "";
     }
 
 
     function moveToNext() {
         if (!Configuration.getInstance().getCanMove())
             return;
-        var currentTile = grid.getTileWithPixel(parseInt(antPicture.style.left), parseInt(antPicture.style.top));
-        if (currentTile === false) {
+
+        rotation += currentTile.getDirection();
+
+        // -- Because of precision sometime moveY and moveX are not 0,1,-1
+        var moveY = Math.round(Math.sin(rotation));
+        var moveX = Math.round(Math.cos(rotation));
+
+        var nextTile = grid.getTileWithPosInArray(parseInt(currentTile.getDomElement().getAttribute("data-row")) + moveX,
+                                                    parseInt(currentTile.getDomElement().getAttribute("data-col") ) + moveY);
+
+        if (nextTile === false) {
             Configuration.getInstance().setCanMove(false);
             return;
         }
-        rotation += currentTile.getDirection();
 
-        var moveY = Math.sin(rotation);
-        var moveX = Math.cos(rotation);
-        moveBy(moveX, moveY);
+        moveTo(parseInt(nextTile.getDomElement().getAttribute("x")), nextTile.getDomElement().getAttribute("y"));
         currentTile.toggleColor();
         moveNbr++;
         updateCounter(moveNbr);
+
+        currentTile = nextTile;
     }
+
 
     function moveBy(x, y) {
         setPos((parseInt(antPicture.style.left) + (x * grid.tileSize)), (parseInt(antPicture.style.top) + (y * grid.tileSize)));
     }
 
+    function moveTo(x, y) {
+        setPos(x, y);
+    }
+
 
     function setPos(x, y) {
-        antPicture.style.top = (y + paddingImg) + "px";
-        antPicture.style.left = (x + paddingImg) + "px";
+        antPicture.style.top = y + "px";
+        antPicture.style.left = x + "px";
     }
 
     init();
@@ -279,7 +307,7 @@ var Ant = function (grid) {
         moveToNext: moveToNext,
         resetMoveNbr: resetMoveNbr,
         getMoveNbr: getMoveNbr,
-        removeDom:removeDom
+        removeDom: removeDom
     }
 };
 /**
@@ -290,41 +318,46 @@ var Configuration = (function () {
     var instance;
 
     var canMove = true;
-    function setCanMove(bool){
+
+    function setCanMove(bool) {
         canMove = bool;
     }
-    function getCanMove(){
+
+    function getCanMove() {
         return canMove;
     }
 
     var isMoving = false;
-    function setIsMoving(bool){
+
+    function setIsMoving(bool) {
         isMoving = bool;
     }
-    function getIsMoving(){
+
+    function getIsMoving() {
         return isMoving;
     }
+
     var countDomElement = false;
-    function setCountDomElement(domElement){
+
+    function setCountDomElement(domElement) {
         countDomElement = domElement;
     }
-    function getCountDomElement(){
+
+    function getCountDomElement() {
         return countDomElement;
     }
 
 
-
     function createInstance() {
         return {
-            setCanMove : setCanMove,
-            getCanMove : getCanMove,
-            setIsMoving : setIsMoving,
-            getIsMoving : getIsMoving,
-            getCountDomElement : getCountDomElement,
-            setCountDomElement : setCountDomElement
+            setCanMove: setCanMove,
+            getCanMove: getCanMove,
+            setIsMoving: setIsMoving,
+            getIsMoving: getIsMoving,
+            getCountDomElement: getCountDomElement,
+            setCountDomElement: setCountDomElement
         };
     }
-
 
 
     return {
