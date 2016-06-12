@@ -121,10 +121,10 @@ var Tile = function (x, y, size) {
     function getDirection() {
         if (domElement.classList.contains('white')) {
             // right
-            return Math.PI / 2;
+            return -Math.PI / 2;
         } else if (domElement.classList.contains('black')) {
             // left
-            return -Math.PI / 2;
+            return Math.PI / 2;
         }
     }
 
