@@ -39,7 +39,7 @@
     <hr>
    Speed :<br>
     The ant moves every <span id="updateTime">100</span> milliseconds.<br>
-    <input type="range" min="10" max="5000" value="100" step="10" onchange="app.setTiming(this.value);document.getElementById('updateTime').innerHTML=this.value" />
+    <input type="range" min="10" max="1000" value="100" step="10" onchange="app.setTiming(this.value);document.getElementById('updateTime').innerHTML=this.value" />
        <br>
        <button onclick="app.start()" class="button small">Start Ant</button>
        <button onclick="app.stop()" class="button primary small">Pause Ant</button><br>
